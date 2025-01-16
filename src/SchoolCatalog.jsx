@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 
 export default function SchoolCatalog() {
   const [courses, setCourses] = useState([]);
@@ -15,29 +15,32 @@ export default function SchoolCatalog() {
       .catch((error) => console.error('Error fetching courses:', error));
   }, []);
 
+  
+  const filteredCourses = useMemo(() => {
+    return courses.filter((course) =>
+      course.courseNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      course.courseName.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [courses, searchTerm]);
 
-  const filteredCourses = courses.filter((course) =>
-    course.courseNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    course.courseName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-
-  const sortedCourses = [...filteredCourses].sort((a, b) => {
+  const sortedCourses = useMemo(() => {
+    const sorted = [...filteredCourses];
     if (sortConfig.key) {
-      const aValue = a[sortConfig.key];
-      const bValue = b[sortConfig.key];
+      sorted.sort((a, b) => {
+        const aValue = a[sortConfig.key];
+        const bValue = b[sortConfig.key];
 
-      if (typeof aValue === 'string') {
-        return sortConfig.direction === 'ascending'
-          ? aValue.localeCompare(bValue)
-          : bValue.localeCompare(aValue);
-      } else {
-        return sortConfig.direction === 'ascending' ? aValue - bValue : bValue - aValue;
-      }
+        if (typeof aValue === 'string') {
+          return sortConfig.direction === 'ascending'
+            ? aValue.localeCompare(bValue)
+            : bValue.localeCompare(aValue);
+        } else {
+          return sortConfig.direction === 'ascending' ? aValue - bValue : bValue - aValue;
+        }
+      });
     }
-    return 0;
-  });
-
+    return sorted;
+  }, [filteredCourses, sortConfig]);
 
   const indexOfLastCourse = currentPage * coursesPerPage;
   const indexOfFirstCourse = indexOfLastCourse - coursesPerPage;
@@ -45,13 +48,16 @@ export default function SchoolCatalog() {
 
   const totalPages = Math.ceil(sortedCourses.length / coursesPerPage);
 
-
   const handleSort = (key) => {
     let direction = 'ascending';
     if (sortConfig.key === key && sortConfig.direction === 'ascending') {
       direction = 'descending';
     }
     setSortConfig({ key, direction });
+  };
+
+  const handleEnroll = (course) => {
+    console.log(`Enrolled in ${course.courseName}`);
   };
 
   return (
@@ -66,11 +72,36 @@ export default function SchoolCatalog() {
       <table>
         <thead>
           <tr>
-            <th onClick={() => handleSort('trimester')}>Trimester</th>
-            <th onClick={() => handleSort('courseNumber')}>Course Number</th>
-            <th onClick={() => handleSort('courseName')}>Course Name</th>
-            <th onClick={() => handleSort('semesterCredits')}>Semester Credits</th>
-            <th onClick={() => handleSort('totalClockHours')}>Total Clock Hours</th>
+            <th
+              onClick={() => handleSort('trimester')}
+              aria-sort={sortConfig.key === 'trimester' ? sortConfig.direction : 'none'}
+            >
+              Trimester
+            </th>
+            <th
+              onClick={() => handleSort('courseNumber')}
+              aria-sort={sortConfig.key === 'courseNumber' ? sortConfig.direction : 'none'}
+            >
+              Course Number
+            </th>
+            <th
+              onClick={() => handleSort('courseName')}
+              aria-sort={sortConfig.key === 'courseName' ? sortConfig.direction : 'none'}
+            >
+              Course Name
+            </th>
+            <th
+              onClick={() => handleSort('semesterCredits')}
+              aria-sort={sortConfig.key === 'semesterCredits' ? sortConfig.direction : 'none'}
+            >
+              Semester Credits
+            </th>
+            <th
+              onClick={() => handleSort('totalClockHours')}
+              aria-sort={sortConfig.key === 'totalClockHours' ? sortConfig.direction : 'none'}
+            >
+              Total Clock Hours
+            </th>
             <th>Enroll</th>
           </tr>
         </thead>
@@ -84,7 +115,7 @@ export default function SchoolCatalog() {
                 <td>{course.semesterCredits}</td>
                 <td>{course.totalClockHours}</td>
                 <td>
-                  <button>Enroll</button>
+                  <button onClick={() => handleEnroll(course)}>Enroll</button>
                 </td>
               </tr>
             ))
