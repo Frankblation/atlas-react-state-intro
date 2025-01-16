@@ -1,10 +1,13 @@
 import React, { useEffect, useState, useMemo } from 'react';
+import { useCourseContext } from './CourseContext';
 
 export default function SchoolCatalog() {
   const [courses, setCourses] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
+
+  const { enrollCourse } = useCourseContext();
 
   const coursesPerPage = 5;
 
@@ -15,7 +18,6 @@ export default function SchoolCatalog() {
       .catch((error) => console.error('Error fetching courses:', error));
   }, []);
 
-  
   const filteredCourses = useMemo(() => {
     return courses.filter((course) =>
       course.courseNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -54,10 +56,6 @@ export default function SchoolCatalog() {
       direction = 'descending';
     }
     setSortConfig({ key, direction });
-  };
-
-  const handleEnroll = (course) => {
-    console.log(`Enrolled in ${course.courseName}`);
   };
 
   return (
@@ -115,7 +113,7 @@ export default function SchoolCatalog() {
                 <td>{course.semesterCredits}</td>
                 <td>{course.totalClockHours}</td>
                 <td>
-                  <button onClick={() => handleEnroll(course)}>Enroll</button>
+                  <button onClick={() => enrollCourse(course)}>Enroll</button>
                 </td>
               </tr>
             ))
